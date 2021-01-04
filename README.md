@@ -1,19 +1,27 @@
 # Fake-News-detector-on-AWS
 FAKE NEWS DETECTOR
-By: Gurleen Kaur and Tarush Khatri 
+
 ABSTRACT:
 The rise in amount of fake news has been very evident since the digital technology and this rise has encouraged work in various areas. The impact of fake news is alarming as it can mislead people to an extent that it can cause panic. Thus, identifying fake news has become one of the popular studies in data science. We are using machine learning and big data technologies to help us achieve our goal to identify news as fake or real. These technologies are available to us in the form of services by world leading cloud service provider, Amazon Web Services (AWS). We use open-source data containing fake and real news articles that we are using to train, build and deploy a machine learning model. For faster results we are using parallel processing framework: Apache Spark. This framework is accessible through AWS Elastic Map   Reduce (EMR) service which is the cloud big data platform for processing vast amount of data. Amazon Sagemaker service provides us python API to support Spark. We save our model in AWS file system using Simple Storage Service (S3). Our web application is built with flask web framework technology. This application takes news article as input from user and uses the saved model to identify it as fake or real.    
+
 Keywords: Machine Learning, Big Data, Amazon Web Services (AWS), Flask, Apache Spark. 
+
 INTRODUCTION:
 Big data is a revolution that has reached plethora of businesses. Ninety percent of the data has been generated in the last two years. Of all data right now, less than 0.5 % is ever used or analyzed. So, there is a lot of potential yet to discover. Major organizations have started investing millions of dollars in Big data projects. 
+
 The increase in the information the organizations have about people has raised concerns due to its capability of manipulating an individual’s decision. Knowing an individual’s habits, likes and activities would give a powerful hold to the organization over an individual. This hold could have a destructive effect on a person’s life. One of such instances was the 2016 US presidential elections. The Great Hack documentary about the famous scandal between Facebook-Cambridge Analytica showed how computer technology and data analysis can bring out the dark side of social media by reshaping the world in a particular image. The political parties hired Cambridge Analytica to use 5000 data points about each of the people the company held to manipulate a certain set of people. As a social media user ourselves, it has become difficult what to believe. We use our knowledge and skills to build a web application which can differentiate between real and fake news using machine learning. 
+
 Three major technologies involved in the making of the application are a processing framework to process the data, building a machine learning model and deploying it to the web application. 
+
 Apache Spark: Big data Processing Framework
 Apache Spark is a cluster computing framework which allows clusters to programmed with implicit data parallelism and fault tolerance. It is a fast engine to process vast amount of data. It provides sophisticated libraries for machine learning and data analytics. We use Python API of Spark (Pyspark). 
+
 Pyspark.ml: Machine Learning API
 Pyspark offers pyspark.ml package which is a dataframe based machine learning API. This package provides APIs that helps configure practical machine learning pipelines. We can build an end-to-end machine learning pipeline using this package.
+
 Flask: Web Application Framework
 Flask is a web framework written in python. It is used to build a web application using the tools and libraries provided by it. It is easy to use and is highly customizable.
+
 DATASET: 
 We are using an open-source dataset from Kaggle. News articles in this dataset are collected from 244 websites scraped by the BS Detector tagged as “Bullshit” from past 30 days it ran. BS Detector is a chrome extension by Daniel Sieradski. This extension helped us in pulling data using an API. Data is coming from their web crawler which is a bot that browses internet for the purpose of web indexing. 
 This data in this dataset contains around 18000 fake and 16000 true news articles. It also incudes 15 attributes for fake news like title, content, publishers, publish date, spam score, domain ranking, language etc.
@@ -26,7 +34,9 @@ Publish date: Date for the article published.
 Spam score: This is the score available for an article whether your article is a spam or not. 0.01- 0.30 is considered as low, 0.30 – 0.60 as medium and 0.60 – 1 as high spam score. We are taking only articles having low spam score.
 Domain ranking: It is search engine ranking score which predicts a websites capability to rank on search engine. Range of domain ranking goes from 1 to 100.
 Language: This shows the language used for the article. 
+
 WORKFLOW:
+
 Setup:
 We used three major services from AWS: 
 •	Elastic Map Reduce: It is a service which help us in creating cluster of Amazon Elastic Compute Cloud (Amazon EC2) machines which run the hosted Spark Framework. It performs the work we submit to our cluster. 
@@ -49,14 +59,18 @@ MonogDB - Sagemaker:
 We use MongoDB Atlas as our database service provider. 
 Python:
 For this we installed pymongo connector and used below mentioned code to access data in MongoDB Atlas
+
 # Connect to MongoDB
 Client=MongoClient("mongodb+srv://****:************/database.collection?retryWrites=true&w=majority")
+
 db = client['database']
 collection = db['collection']
 # Insert collection
 collection.insert_many(dataframe)
+
 Pyspark:
 We install mongodb and pyspark connector into our master machine so that it can communicate with each other. We set uniform resource identifier (URI) paths as well. We use below code for connecting to MongoDB through Jupyter notebook.
+
 We are providing URI paths while building spark session:
 spark = SparkSession \
 .builder \
@@ -85,13 +99,16 @@ The above graph shows the distribution of spam score is left skewed over all rec
 We made word cloud on the content column which shows the most used word in our dataset
  
 Data Cleaning:
+
 We clean our dataset by doing following steps 
 •	removing null values from the dataset
 •	only selecting articles of English language
 •	selecting articles having spam score less than 0.40
  
 After this, we push our dataset into MongoDb Atlas database.
+
 Preprocessing:
+
 We load dataset from MongoDB Atlas to pyspark notebook. These notebooks are backed up by Apache Spark framework hosted on EMR cluster. For preprocessing we followed some procedures mentioned in below diagram:   
  
 Removing Punctuation:  
@@ -99,36 +116,46 @@ We created a function that Removed punctuation using regular expression.
 #function for removing punctuation 
  DefremovePunctuation(column):
 return split(trim(lower(regexp_replace(concat_ws("SEPARATORSTRING", column),'[^\sa-zA-Z0-9]', ''))), "SEPARATORSTRING").alias('stopped') 
+
 Splitting text: 
 We have split title and content column based on spaces. This gave us list of all words.
 #splitting sentences to words 
 split_col = pyspark.sql.functions.split(df['title_p'], ' ')
+
 Stemming: 
 This function reduces the words to their root form. We use Snowball stemmer function for our preprocessing 
 # Stem text
 stemmer = SnowballStemmer(language='english')
 stemmer_udf = udf(lambda tokens: [stemmer.stem(token) for token in tokens], ArrayType(StringType())) 
+
 Removing stop words: 
 We remove stopwords from title and content column which gave us only relevant words to focus on.
 #Remove stop words
 title_sw_remover= StopWordsRemover(inputCol= 'title_stemmed', outputCol= 'title_sw_removed')
+
 Count Vectorizer: 
 We use countvectorizer function to convert a collection of text to a vector of term counts. 
 #computing frequency of the words for title
 title_count_vectorizer= CountVectorizer(inputCol= 'title_sw_removed', outputCol= 'tf_title')   
+
 IDF: 
 This is statistical measure which determine how significant a word is in collection of documents. 
 #Computing frequency-inverse document frequency from title
 title_tfidf= IDF(inputCol= 'tf_title', outputCol= 'tf_idf_title') 
+
 Vector Assembler: 
 This function combines all the features into a single feature for our model to train.
 #VectorAssembler
 vec_assembler= VectorAssembler(inputCols=['tf_idf_title', 'tf_idf_text'], outputCol= 'features')  
+
 The above preprocessing techniques convert all text data into numeric form making it ready for machine learning model.
+
 Machine learning model (logistic regression): 
+
 One of the best machine learning models for binary classification is logistic regression. It has simple algorithm and easy to implement. It estimates the probability of relationship between the class/label attribute and other independent attributes. Due to two class labels involved in fake news detection and few independent variables involved in predicting these class labels, logistic regression model becomes perfect choice for our project.
 from pyspark.ml.classification import LogisticRegression
 lr = LogisticRegression(featuresCol="features", labelCol="label", maxIter=20, regParam=0.3, elasticNetParam=0)  
+
 Pipelining: 
 The pipeline API of pyspark helps specifying sequence of stages where each stage can be a transformer or an estimator. Below is the code of how we set sequences for our pipeline:  
 from pyspark.ml import Pipeline
@@ -143,8 +170,10 @@ lr_pipe= Pipeline(stages=[
                 lr])                               #logistic regression model
 
 Training and Testing data: 
+
 We split our data into training and testing data in the ratio of 0.7:0.3. 70% of the data is used for training and 30% of the data is used for testing.
 train, test= df.randomSplit([0.7, 0.3])
+
 Cross-validation:
  It is a model validation technique to predict new data that was not used in estimating it. This generally overcomes the problem of overfitting or selection bias. For doing cross validation we set hypermeters by using ParamGridBuilder function. Code is mention for both crossvalidation with tuning hyperparameters
  #setting up hyper parameters for cross validation 
@@ -161,6 +190,7 @@ crossval = CrossValidator(estimator=lr_pipe,
                           evaluator=BinaryClassificationEvaluator(),
                           numFolds=4)
 Training the model: 
+
 We train our model using training data. Below is the code:
 #fitting the training data into our model
 lr_model=crossval.fit(train).bestModel
@@ -183,7 +213,9 @@ We save our pipelining model to S3 bucket so that we can be used directly by our
 lr_model.write().overwrite().save(S3_bucket_path)
 FLASK: WEB APPLICATION FRAMEWORK (WSGI BASED)
 We build a web application using Flask framework in pyspark. It uses WSGI (Web Server Gateway Interface) as an interface between web servers and web apps. The spark-Submit job loads our saved model from S3 bucket and use it identify the news as fake or real. The web application takes news title and content as input from the user and outputs the result showing whether its fake or real.  Below is the pyspark code for our web application.
+
 Setup:
+
 Install below packages on EMR EC2 master machine to start using Flask.
 Python -m pip install flask
 Python -m pip install flask_restful
